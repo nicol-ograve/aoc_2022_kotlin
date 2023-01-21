@@ -1,0 +1,139 @@
+@ -2,73 +2,88 @@ package day16.model
+
+
+sealed class ScanAction(val state: ScanState, val userIndex: Int = 0) {
+    abstract fun execute(decreaseMinute: Boolean): ScanState
+    abstract fun execute()
+    abstract fun undo()
+
+    protected val decreaseMinute: Boolean = userIndex == 0
+}
+
+class ReleasePressure(state: ScanState, userIndex: Int) : ScanAction(state, userIndex) {
+    private var cachedValves: MutableSet<Valve>? =  null
+
+    private var value = state.currentValve[userIndex].flowRate * (if(decreaseMinute)state.remainingMinutes -1 else state.remainingMinutes)
+    private val str ="${userIndex}) Releasing Pressure to ${state.currentValve[userIndex]} ($value)"
+    override fun toString(): String {
+        return "${userIndex}) Releasing Pressure to ${state.currentValve[userIndex]}"
+        return str
+    }
+
+    override fun execute(decreaseMinute: Boolean): ScanState {
+    override fun execute() {
+        val valve = state.currentValve[userIndex]
+        val remainingMinutes = if (decreaseMinute) state.remainingMinutes - 1 else state.remainingMinutes
+        return state.copy(
+            remainingMinutes = remainingMinutes,
+            nextUserTurn = if (userIndex == 0) 1 else 0,
+            releasedPressure = state.releasedPressure + remainingMinutes * valve.flowRate,
+            openedValves = state.openedValves + valve,
+            actions = state.actions + this,
+            visitedSinceLastOpening = state.visitedSinceLastOpening.mapIndexed { index, it ->
+                if (index == userIndex) {
+                    HashSet<Valve>()
+                } else {
+                    it
+                }
+            },
+
+            )
+
+        state.remainingMinutes = remainingMinutes
+        state.nextUserTurn = if (userIndex == 0) 1 else 0
+        state.releasedPressure +=  remainingMinutes * valve.flowRate
+        state.openedValves.add(valve)
+//        state.actions.add(this)
+
+        cachedValves = state.visitedSinceLastOpening[userIndex]
+        state.visitedSinceLastOpening[userIndex] = HashSet<Valve>()
+
+    }
+
+    override fun undo() {
+
+        val valve = state.currentValve[userIndex]
+        val remainingMinutes = if (decreaseMinute) state.remainingMinutes + 1 else state.remainingMinutes
+
+        state.nextUserTurn = if (userIndex == 0) 1 else 0
+        state.releasedPressure -=  state.remainingMinutes * valve.flowRate
+        state.remainingMinutes = remainingMinutes
+        state.openedValves.remove(valve)
+//        state.actions.remove(this)
+        state.visitedSinceLastOpening[userIndex] = cachedValves!!
+
+    }
+
+}
+
+class CrossTunnel(state: ScanState, val newValve: Valve, userIndex: Int) : ScanAction(state, userIndex) {
+    private var previousValve: Valve? = null
+
+    private val str ="${userIndex}) Crossing tunnel from ${state.currentValve[userIndex]} to $newValve"
+    override fun toString(): String {
+    return "${userIndex}) Crossing tunnel from ${state.currentValve[userIndex]} to $newValve"
+}
+        return str
+    }
+
+    override fun execute(decreaseMinute: Boolean): ScanState {
+    override fun execute() {
+
+        val currentValve = state.currentValve[userIndex]
+        val arcsMap = hashMapOf<Valve, MutableList<Valve>>()
+        state.crossedArcs.keys.forEach {
+            arcsMap[it] = state.crossedArcs[it]!!.toMutableList()
+        }
+        arcsMap.putIfAbsent(currentValve, mutableListOf())
+        arcsMap[currentValve]!!.add(newValve)
+
+        return state.copy(
+            nextUserTurn = if (userIndex == 0) 1 else 0,
+            remainingMinutes = if (decreaseMinute) state.remainingMinutes - 1 else state.remainingMinutes,
+            currentValve = state.currentValve.mapIndexed { index, it ->
+                if (index == userIndex) {
+                    newValve
+                } else {
+                    it
+                }
+            },
+            actions = state.actions + this,
+            visitedSinceLastOpening = state.visitedSinceLastOpening
+                .mapIndexed { index, it ->
+                    if (index == userIndex) {
+                        state.visitedSinceLastOpening[index] + newValve
+                    } else {
+                        it
+                    }
+                },
+            crossedArcs = arcsMap
+        )
+
+
+        state.nextUserTurn = if (userIndex == 0) 1 else 0
+        state.remainingMinutes = if (decreaseMinute) state.remainingMinutes - 1 else state.remainingMinutes
+
+        previousValve = currentValve
+        state.currentValve[userIndex] = newValve
+
+//        state.actions.add(this)
+        state.visitedSinceLastOpening[userIndex].add(newValve)
+
+        state.crossedArcs.putIfAbsent(currentValve, HashSet())
+        state.crossedArcs[currentValve]!!.add(newValve)
+
+    }
+
+
+    override fun undo() {
+
+        state.nextUserTurn = if (userIndex == 0) 1 else 0
+        state.remainingMinutes = if (decreaseMinute) state.remainingMinutes + 1 else state.remainingMinutes
+        state.currentValve[userIndex] = previousValve!!
+//        state.actions.remove(this)
+        state.visitedSinceLastOpening[userIndex].remove(newValve)
+        state.crossedArcs[previousValve]!!.remove(newValve)
+    }
+}
+
+//class StayAtCurrentValve(userIndex: Int) : ScanAction(userIndex) {

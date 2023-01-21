@@ -1,8 +1,6 @@
 package day16
 
 import day16.model.Valve
-import shared.Point
-import java.util.Scanner
 
 val regex = Regex("Valve (\\w+) has flow rate=(\\d+); tunnels? leads? to valves? (.+)")
 
@@ -23,10 +21,31 @@ fun readValvesInput(lines: List<String>): Array<Valve> {
 
     }
 
-    for (id in valvesMap.keys){
-        val neighbors = reachableIdsMap[id]!!.map { valvesMap[it]!! }
-        valvesMap[id]!!.addReachableValves(neighbors)
+    for (id in valvesMap.keys) {
+        reachableIdsMap[id]!!.map { valvesMap[it]!! }.forEach {
+            valvesMap[id]!!.addNeighbor(it)
+        }
     }
 
-    return valvesMap.values.toTypedArray()
+    valvesMap.values.filter { it.id != "AA" && it.flowRate == 0 }.forEach { valve ->
+        replaceValveFromNeighbors(valve)
+    }
+
+    return valvesMap.values.filter { it.id == "AA" || it.flowRate > 0 }.toTypedArray()
+}
+
+fun replaceValveFromNeighbors(valve: Valve) {
+    val neighbors = valve.reachableValves.keys
+
+    neighbors.forEach { neighbor ->
+        neighbor.reachableValves.remove(valve)
+
+        neighbors.filter { it != neighbor }.forEach {
+            val currentCost = neighbor.reachableValves[it]
+            val newCost = valve.reachableValves[neighbor]!! + valve.reachableValves[it]!!
+            if (currentCost == null || currentCost > newCost) {
+                neighbor.reachableValves[it] = newCost
+            }
+        }
+    }
 }
