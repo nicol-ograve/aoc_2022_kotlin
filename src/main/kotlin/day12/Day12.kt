@@ -40,7 +40,8 @@ fun main(args: Array<String>) {
     println(result)
 }
 
-val moves = arrayOf(Up, Left, Down, Right)
+// TODO implemented when Up/Down logic were wrong. Must be checked again
+val moves = arrayOf(Down, Left, Up, Right)
 
 
 fun Char.height(): Int {

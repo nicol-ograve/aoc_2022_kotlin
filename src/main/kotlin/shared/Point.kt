@@ -18,6 +18,8 @@ data class Point(val x: Int, val y: Int) {
         result = 31 * result + y
         return result
     }
+
+    operator fun plus(offset: Point): Point = Point(offset.x + x, offset.y + y)
 }
 
 fun pointsBetween(start: Point, end: Point): List<Point> {
@@ -37,7 +39,6 @@ fun pointsBetween(start: Point, end: Point): List<Point> {
     }
 
     return points
-
 
 
 }

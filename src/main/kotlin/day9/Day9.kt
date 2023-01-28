@@ -9,7 +9,9 @@ import utils.getDataScanner
 
     val reader = InputReader()
 
-    // val rope = HeadTailRope()
+
+     // TODO implemented when Up/Down logic were wrong. Must be checked again
+
      val rope = MultiKnotsRope(10)
      val positionsCounter = TailPositionsCounter(rope)
 

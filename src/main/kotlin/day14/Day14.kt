@@ -11,6 +11,8 @@ import java.util.Scanner
 fun main(args: Array<String>) {
     val lines = getDataLines(14, arrayOf("demso"))
 
+    // TODO implemented when Up/Down logic were wrong. Must be checked again
+
     val input = readInput(lines)
 
     var finished = false
